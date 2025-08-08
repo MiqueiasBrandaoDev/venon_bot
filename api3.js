@@ -64,19 +64,21 @@ function initVenom() {
         // Opções do navegador - quarto parâmetro
         {
             headless: true,
-            executablePath: '/usr/bin/chromium-browser',
-            // Parâmetros adicionais para resolver problemas comuns
-            args: [
+            devtools: false,
+            useChrome: true,
+            debug: false,
+            logQR: false,
+            browserArgs: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
                 '--disable-dev-shm-usage',
                 '--disable-accelerated-2d-canvas',
                 '--no-first-run',
                 '--no-zygote',
-                '--single-process',
-                '--disable-gpu'
-            ],
-            ignoreHTTPSErrors: true
+                '--disable-gpu',
+                '--disable-web-security',
+                '--disable-features=VizDisplayCompositor'
+            ]
         }
     )
     .then((client) => {
@@ -108,9 +110,12 @@ app.post('/send-message', async (req, res) => {
             });
         }
 
+        // Formata o número para o padrão do WhatsApp
+        const formattedNumber = to.includes('@c.us') ? to : `${to}@c.us`;
+
         // Enviar mensagem de texto simples
         if (!mediaUrl) {
-            await clientInstance.sendText(to, message);
+            await clientInstance.sendText(formattedNumber, message);
             return res.json({ success: true, message: 'Mensagem enviada com sucesso' });
         }
 
@@ -118,16 +123,16 @@ app.post('/send-message', async (req, res) => {
         else {
             switch (mediaType) {
                 case 'image':
-                    await clientInstance.sendImage(to, mediaUrl, 'image', message);
+                    await clientInstance.sendImage(formattedNumber, mediaUrl, 'image', message);
                     break;
                 case 'document':
-                    await clientInstance.sendFile(to, mediaUrl, 'document', message);
+                    await clientInstance.sendFile(formattedNumber, mediaUrl, 'document', message);
                     break;
                 case 'video':
-                    await clientInstance.sendVideoAsGif(to, mediaUrl, 'video', message);
+                    await clientInstance.sendVideoAsGif(formattedNumber, mediaUrl, 'video', message);
                     break;
                 default:
-                    await clientInstance.sendText(to, message);
+                    await clientInstance.sendText(formattedNumber, message);
             }
             return res.json({ success: true, message: 'Mensagem com mídia enviada com sucesso' });
         }
